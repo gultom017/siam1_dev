@@ -18,47 +18,47 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-type JRolesRequest struct {
-	Username string
-	ParamKey string
-	Method   string
-	RoleID   string
-	RoleName string
-	Status   string
-	Page     int
-	RowPage  int
-	OrderBy  string
-	Order    string
+type JSubjectsRequest struct {
+	Username    string
+	ParamKey    string
+	Method      string
+	SubjectID   string
+	SubjectName string
+	Status      string
+	Page        int
+	RowPage     int
+	OrderBy     string
+	Order       string
 }
 
-type JRolesResponse struct {
-	RoleID       int
-	RoleName     string
+type JSubjectsResponse struct {
+	SubjectID    int
+	SubjectName  string
 	Status       string
 	TanggalInput string
 }
 
-func Roles(c *gin.Context) {
+func Subjects(c *gin.Context) {
 	db := helper.Connect(c)
 	defer db.Close()
 	StartTime := time.Now()
 	StartTimeStr := StartTime.String()
-	PageGo := "ROLES"
+	PageGo := "SUBJECTS"
 
 	var (
-		bodyBytes         []byte
-		XRealIp           string
-		IP                string
-		LogFile           string
-		totalPage         float64
-		totalRecords      float64
-		totalRecordsID    float64
-		totalRecordsRoles float64
+		bodyBytes           []byte
+		XRealIp             string
+		IP                  string
+		LogFile             string
+		totalPage           float64
+		totalRecords        float64
+		totalRecordsID      float64
+		totalRecordsSubject float64
 	)
 
-	jRolesRequest := JRolesRequest{}
-	jRolesResponse := JRolesResponse{}
-	jRolesResponses := []JRolesResponse{}
+	jSubjectsRequest := JSubjectsRequest{}
+	jSubjectsResponse := JSubjectsResponse{}
+	jSubjectsResponses := []JSubjectsResponse{}
 
 	AllHeader := helper.ReadAllHeader(c)
 	LogFile = os.Getenv("LOGFILE")
@@ -103,73 +103,73 @@ func Roles(c *gin.Context) {
 
 	if string(bodyString) == "" {
 		errorMessage := "Error, Body is empty"
-		returnDataJsonRoles(jRolesResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
-		helper.SendLogError(jRolesRequest.Username, PageGo, errorMessage, "", "", "1", AllHeader, Method, Path, IP, c)
+		returnDataJsonSubjects(jSubjectsResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
+		helper.SendLogError(jSubjectsRequest.Username, PageGo, errorMessage, "", "", "1", AllHeader, Method, Path, IP, c)
 		return
 	}
 
 	IsJson := helper.IsJson(bodyString)
 	if !IsJson {
 		errorMessage := "Error, Body - invalid json data"
-		returnDataJsonRoles(jRolesResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
-		helper.SendLogError(jRolesRequest.Username, PageGo, errorMessage, "", "", "1", AllHeader, Method, Path, IP, c)
+		returnDataJsonSubjects(jSubjectsResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
+		helper.SendLogError(jSubjectsRequest.Username, PageGo, errorMessage, "", "", "1", AllHeader, Method, Path, IP, c)
 		return
 	}
 	// ------ end of body json validation ------
 
 	// ------ Header Validation ------
 	if helper.ValidateHeader(bodyString, c) {
-		if err := c.ShouldBindJSON(&jRolesRequest); err != nil {
+		if err := c.ShouldBindJSON(&jSubjectsRequest); err != nil {
 			errorMessage := "Error, Bind Json Data"
-			returnDataJsonRoles(jRolesResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
-			helper.SendLogError(jRolesRequest.Username, PageGo, errorMessage, "", "", "1", AllHeader, Method, Path, IP, c)
+			returnDataJsonSubjects(jSubjectsResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
+			helper.SendLogError(jSubjectsRequest.Username, PageGo, errorMessage, "", "", "1", AllHeader, Method, Path, IP, c)
 			return
 		} else {
 
 			Page := 0
 			RowPage := 0
 
-			UsernameSession := jRolesRequest.Username
-			ParamKeySession := jRolesRequest.ParamKey
-			Username := jRolesRequest.Username
-			RoleID := jRolesRequest.RoleID
-			RoleName := strings.TrimSpace(jRolesRequest.RoleName)
-			Method := jRolesRequest.Method
-			Status := jRolesRequest.Status
-			Page = jRolesRequest.Page
-			RowPage = jRolesRequest.RowPage
-			Order := jRolesRequest.Order
-			OrderBy := jRolesRequest.OrderBy
+			UsernameSession := jSubjectsRequest.Username
+			ParamKeySession := jSubjectsRequest.ParamKey
+			Username := jSubjectsRequest.Username
+			SubjectID := jSubjectsRequest.SubjectID
+			SubjectName := strings.TrimSpace(jSubjectsRequest.SubjectName)
+			Method := jSubjectsRequest.Method
+			Status := jSubjectsRequest.Status
+			Page = jSubjectsRequest.Page
+			RowPage = jSubjectsRequest.RowPage
+			Order := jSubjectsRequest.Order
+			OrderBy := jSubjectsRequest.OrderBy
 
 			// ------ start check session paramkey ------
 			checkAccessVal := helper.CheckSession(UsernameSession, ParamKeySession, c)
 			if checkAccessVal != "1" {
 				checkAccessValErrorMsg := checkAccessVal
 				checkAccessValErrorMsgReturn := "Session Expired"
-				returnDataJsonRoles(jRolesResponses, totalPage, "2", "2", checkAccessValErrorMsgReturn, checkAccessValErrorMsgReturn, logData, c)
-				helper.SendLogError(jRolesRequest.Username, PageGo, checkAccessValErrorMsg, "", "", "2", AllHeader, Method, Path, IP, c)
+				returnDataJsonSubjects(jSubjectsResponses, totalPage, "2", "2", checkAccessValErrorMsgReturn, checkAccessValErrorMsgReturn, logData, c)
+				helper.SendLogError(jSubjectsRequest.Username, PageGo, checkAccessValErrorMsg, "", "", "2", AllHeader, Method, Path, IP, c)
 				return
 			}
 			// ------ end of check session paramkey ------
 
 			if Method == "INSERT" {
 				queryWhere := ""
-				if RoleName != "" {
+				if SubjectName != "" {
 					if queryWhere != "" {
 						queryWhere += " AND "
 					}
 
-					queryWhere += " upper(nama_role)  = upper('" + RoleName + "') "
+					queryWhere += " upper(nama_mapel)  = upper('" + SubjectName + "') "
 				} else {
-					errorMessage := "Role Name can not be empty!"
-					returnDataJsonRoles(jRolesResponses, totalPage, "3", "3", errorMessage, errorMessage, logData, c)
+					errorMessage := "Subject Name can not be empty!"
+					returnDataJsonSubjects(jSubjectsResponses, totalPage, "3", "3", errorMessage, errorMessage, logData, c)
 					helper.SendLogError(Username, PageGo, errorMessage, "", "", "3", AllHeader, Method, Path, IP, c)
 					return
 				}
 
 				if Status == "" {
 					errorMessage := "Status can not be empty!"
-					returnDataJsonRoles(jRolesResponses, totalPage, "3", "3", errorMessage, errorMessage, logData, c)
+					returnDataJsonSubjects(jSubjectsResponses, totalPage, "3", "3", errorMessage, errorMessage, logData, c)
 					helper.SendLogError(Username, PageGo, errorMessage, "", "", "3", AllHeader, Method, Path, IP, c)
 					return
 				}
@@ -180,29 +180,29 @@ func Roles(c *gin.Context) {
 				// ---------- end of query where ----------
 
 				totalRecords = 0
-				query := fmt.Sprintf("SELECT COUNT(1) AS cnt FROM siam_role %s", queryWhere)
+				query := fmt.Sprintf("SELECT COUNT(1) AS cnt FROM siam_mata_pelajaran %s", queryWhere)
 
 				if err := db.QueryRow(query).Scan(&totalRecords); err != nil {
 					errorMessage := "Error query, " + err.Error()
-					returnDataJsonRoles(jRolesResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
+					returnDataJsonSubjects(jSubjectsResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
 					helper.SendLogError(Username, PageGo, errorMessage, "", "", "1", AllHeader, Method, Path, IP, c)
 					return
 				} else {
 					if totalRecords > 0 {
-						errorMessage := "Role " + RoleName + " is already existed"
-						returnDataJsonRoles(jRolesResponses, totalPage, "3", "3", errorMessage, errorMessage, logData, c)
+						errorMessage := "Subject " + SubjectName + " is already existed"
+						returnDataJsonSubjects(jSubjectsResponses, totalPage, "3", "3", errorMessage, errorMessage, logData, c)
 						helper.SendLogError(Username, PageGo, errorMessage, "", "", "3", AllHeader, Method, Path, IP, c)
 						return
 					} else {
-						queryInsert := fmt.Sprintf("INSERT INTO siam_role ( nama_role, status, tgl_input) values ('%s','1',sysdate())", RoleName)
+						queryInsert := fmt.Sprintf("INSERT INTO siam_mata_pelajaran ( nama_mapel, status_mapel, tgl_input) values ('%s','1',sysdate())", SubjectName)
 						if _, err := db.Exec(queryInsert); err != nil {
 							errorMessage := "Error insert, " + err.Error()
-							returnDataJsonRoles(jRolesResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
+							returnDataJsonSubjects(jSubjectsResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
 							helper.SendLogError(Username, PageGo, errorMessage, "", "", "1", AllHeader, Method, Path, IP, c)
 							return
 						} else {
-							successMessage := "Success to insert data Role!"
-							returnDataJsonRoles(jRolesResponses, totalPage, "0", "0", successMessage, successMessage, logData, c)
+							successMessage := "Success to insert data Subject!"
+							returnDataJsonSubjects(jSubjectsResponses, totalPage, "0", "0", successMessage, successMessage, logData, c)
 							return
 						}
 					}
@@ -211,9 +211,9 @@ func Roles(c *gin.Context) {
 			} else if Method == "UPDATE" {
 				querySet := ""
 				// --------------- Query Where --------------
-				if RoleID == "" {
-					errorMessage := "Role ID can not be empty!"
-					returnDataJsonRoles(jRolesResponses, totalPage, "3", "3", errorMessage, errorMessage, logData, c)
+				if SubjectID == "" {
+					errorMessage := "Subject ID can not be empty!"
+					returnDataJsonSubjects(jSubjectsResponses, totalPage, "3", "3", errorMessage, errorMessage, logData, c)
 					helper.SendLogError(Username, PageGo, errorMessage, "", "", "3", AllHeader, Method, Path, IP, c)
 					return
 				}
@@ -221,12 +221,12 @@ func Roles(c *gin.Context) {
 				// --------------- End of query where -------
 
 				// --------------- Query Set ----------------
-				if RoleName != "" {
+				if SubjectName != "" {
 					if querySet != "" {
 						querySet += " , "
 					}
 
-					querySet += " nama_role  = upper('" + RoleName + "') "
+					querySet += " nama_mapel  = upper('" + SubjectName + "') "
 				}
 
 				if Status != "" {
@@ -234,7 +234,7 @@ func Roles(c *gin.Context) {
 						querySet += " , "
 					}
 
-					querySet += " status  = '" + RoleName + "' "
+					querySet += " status_mapel  = '" + SubjectName + "' "
 				}
 
 				if querySet != "" {
@@ -243,47 +243,47 @@ func Roles(c *gin.Context) {
 
 				// -------- end of query for update ---------
 				totalRecords = 0
-				totalRecordsRoles = 0
-				queryCekID := fmt.Sprintf("SELECT COUNT(1) AS cnt FROM siam_role WHERE id = '%s'", RoleID)
+				totalRecordsSubject = 0
+				queryCekID := fmt.Sprintf("SELECT COUNT(1) AS cnt FROM siam_mata_pelajaran WHERE id_mapel = '%s'", SubjectID)
 
 				if err := db.QueryRow(queryCekID).Scan(&totalRecordsID); err != nil {
 					errorMessage := "Error query, " + err.Error()
-					returnDataJsonRoles(jRolesResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
+					returnDataJsonSubjects(jSubjectsResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
 					helper.SendLogError(Username, PageGo, errorMessage, "", "", "1", AllHeader, Method, Path, IP, c)
 					return
 				} else {
 					if totalRecordsID == 0 {
-						errorMessage := "Role ID Not Found!"
-						returnDataJsonRoles(jRolesResponses, totalPage, "3", "3", errorMessage, errorMessage, logData, c)
+						errorMessage := "Subject ID Not Found!"
+						returnDataJsonSubjects(jSubjectsResponses, totalPage, "3", "3", errorMessage, errorMessage, logData, c)
 						helper.SendLogError(Username, PageGo, errorMessage, "", "", "3", AllHeader, Method, Path, IP, c)
 						return
 					} else {
-						totalRecordsRoles = 0
-						queryCekRoles := fmt.Sprintf("SELECT COUNT(1) AS cnt FROM siam_role WHERE upper(nama_role) = upper('%s')", RoleName)
+						totalRecordsSubject = 0
+						queryCekSubjects := fmt.Sprintf("SELECT COUNT(1) AS cnt FROM siam_mata_pelajaran WHERE upper(nama_mapel) = upper('%s')", SubjectName)
 
-						if err := db.QueryRow(queryCekRoles).Scan(&totalRecordsRoles); err != nil {
+						if err := db.QueryRow(queryCekSubjects).Scan(&totalRecordsSubject); err != nil {
 							errorMessage := "Error query, " + err.Error()
-							returnDataJsonRoles(jRolesResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
+							returnDataJsonSubjects(jSubjectsResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
 							helper.SendLogError(Username, PageGo, errorMessage, "", "", "1", AllHeader, Method, Path, IP, c)
 							return
 						} else {
 
-							if totalRecordsRoles > 0 {
-								errorMessage := "Role " + RoleName + " is already existed"
-								returnDataJsonRoles(jRolesResponses, totalPage, "3", "3", errorMessage, errorMessage, logData, c)
+							if totalRecordsSubject > 0 {
+								errorMessage := "Subject " + SubjectName + " is already existed"
+								returnDataJsonSubjects(jSubjectsResponses, totalPage, "3", "3", errorMessage, errorMessage, logData, c)
 								helper.SendLogError(Username, PageGo, errorMessage, "", "", "3", AllHeader, Method, Path, IP, c)
 								return
 							} else {
 
-								queryUpdate := fmt.Sprintf("UPDATE siam_role  %s WHERE id = '%s' ", querySet, RoleID)
+								queryUpdate := fmt.Sprintf("UPDATE siam_mata_pelajaran  %s WHERE id_mapel = '%s' ", querySet, SubjectID)
 								if _, err := db.Exec(queryUpdate); err != nil {
 									errorMessage := "Error update, " + err.Error()
-									returnDataJsonRoles(jRolesResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
+									returnDataJsonSubjects(jSubjectsResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
 									helper.SendLogError(Username, PageGo, errorMessage, "", "", "1", AllHeader, Method, Path, IP, c)
 									return
 								} else {
-									successMessage := "Success to update data Role!"
-									returnDataJsonRoles(jRolesResponses, totalPage, "0", "0", successMessage, successMessage, logData, c)
+									successMessage := "Success to update data Subject!"
+									returnDataJsonSubjects(jSubjectsResponses, totalPage, "0", "0", successMessage, successMessage, logData, c)
 									return
 								}
 
@@ -293,40 +293,40 @@ func Roles(c *gin.Context) {
 				}
 
 			} else if Method == "DELETE" {
-				if RoleID == "" {
-					errorMessage := "Role ID can not be null!"
-					returnDataJsonRoles(jRolesResponses, totalPage, "3", "3", errorMessage, errorMessage, logData, c)
+				if SubjectID == "" {
+					errorMessage := "Subject ID can not be null!"
+					returnDataJsonSubjects(jSubjectsResponses, totalPage, "3", "3", errorMessage, errorMessage, logData, c)
 					helper.SendLogError(Username, PageGo, errorMessage, "", "", "3", AllHeader, Method, Path, IP, c)
 					return
 				}
 				// ---------- end of query where ----------
 
 				totalRecords = 0
-				query := fmt.Sprintf("SELECT COUNT(1) AS cnt FROM siam_role WHERE id = '%s'", RoleID)
+				query := fmt.Sprintf("SELECT COUNT(1) AS cnt FROM siam_mata_pelajaran WHERE id_mapel = '%s'", SubjectID)
 
 				if err := db.QueryRow(query).Scan(&totalRecords); err != nil {
 					errorMessage := "Error query, " + err.Error()
-					returnDataJsonRoles(jRolesResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
+					returnDataJsonSubjects(jSubjectsResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
 					helper.SendLogError(Username, PageGo, errorMessage, "", "", "1", AllHeader, Method, Path, IP, c)
 					return
 				} else {
 					if totalRecords == 1 {
 
-						queryInsert := fmt.Sprintf("DELETE FROM siam_role WHERE id = '%s'", RoleID)
+						queryInsert := fmt.Sprintf("DELETE FROM siam_mata_pelajaran WHERE id_mapel = '%s'", SubjectID)
 						if _, err := db.Exec(queryInsert); err != nil {
 							errorMessage := "Error insert, " + err.Error()
-							returnDataJsonRoles(jRolesResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
+							returnDataJsonSubjects(jSubjectsResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
 							helper.SendLogError(Username, PageGo, errorMessage, "", "", "1", AllHeader, Method, Path, IP, c)
 							return
 						} else {
-							successMessage := "Success to delete data Role!"
-							returnDataJsonRoles(jRolesResponses, totalPage, "0", "0", successMessage, successMessage, logData, c)
+							successMessage := "Success to delete data Subject!"
+							returnDataJsonSubjects(jSubjectsResponses, totalPage, "0", "0", successMessage, successMessage, logData, c)
 							return
 						}
 
 					} else if totalRecords == 0 {
 						errorMessage := "No Data Found To Delete"
-						returnDataJsonRoles(jRolesResponses, totalPage, "3", "3", errorMessage, errorMessage, logData, c)
+						returnDataJsonSubjects(jSubjectsResponses, totalPage, "3", "3", errorMessage, errorMessage, logData, c)
 						helper.SendLogError(Username, PageGo, errorMessage, "", "", "3", AllHeader, Method, Path, IP, c)
 						return
 					}
@@ -338,12 +338,12 @@ func Roles(c *gin.Context) {
 
 				// ---------- start query where ----------
 				queryWhere := ""
-				if RoleName != "" {
+				if SubjectName != "" {
 					if queryWhere != "" {
 						queryWhere += " AND "
 					}
 
-					queryWhere += " upper(nama_role) LIKE upper('%" + RoleName + "%') "
+					queryWhere += " upper(nama_mapel) LIKE upper('%" + SubjectName + "%') "
 				}
 
 				if Status != "" {
@@ -351,7 +351,7 @@ func Roles(c *gin.Context) {
 						queryWhere += " AND "
 					}
 
-					queryWhere += " status = '" + Status + "' "
+					queryWhere += " status_mapel = '" + Status + "' "
 				}
 
 				if queryWhere != "" {
@@ -366,7 +366,7 @@ func Roles(c *gin.Context) {
 				} else {
 					if Order == "" {
 						errorMessage := "Order tidak boleh kosong"
-						returnDataJsonRoles(jRolesResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
+						returnDataJsonSubjects(jSubjectsResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
 						helper.SendLogError(Username, PageGo, errorMessage, "", "", "1", AllHeader, Method, Path, IP, c)
 						return
 					} else {
@@ -376,49 +376,49 @@ func Roles(c *gin.Context) {
 
 				totalRecords = 0
 				totalPage = 0
-				query := fmt.Sprintf("SELECT COUNT(1) AS cnt FROM siam_role %s", queryWhere)
+				query := fmt.Sprintf("SELECT COUNT(1) AS cnt FROM siam_mata_pelajaran %s", queryWhere)
 
 				if err := db.QueryRow(query).Scan(&totalRecords); err != nil {
 					errorMessage := "Error query, " + err.Error()
-					returnDataJsonRoles(jRolesResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
+					returnDataJsonSubjects(jSubjectsResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
 					helper.SendLogError(Username, PageGo, errorMessage, "", "", "1", AllHeader, Method, Path, IP, c)
 					return
 				}
 				totalPage = math.Ceil(float64(totalRecords) / float64(RowPage))
 
-				query1 := fmt.Sprintf(`SELECT id, nama_role, status, tgl_input FROM siam_role %s %s LIMIT %d,%d;`, queryWhere, queryOrder, PageNow, RowPage)
+				query1 := fmt.Sprintf(`SELECT id_mapel, nama_mapel, status_mapel, tgl_input FROM siam_mata_pelajaran %s %s LIMIT %d,%d;`, queryWhere, queryOrder, PageNow, RowPage)
 				rows, err := db.Query(query1)
 				defer rows.Close()
 				if err != nil {
 					errorMessage := "Error query, " + err.Error()
-					returnDataJsonRoles(jRolesResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
+					returnDataJsonSubjects(jSubjectsResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
 					helper.SendLogError(Username, PageGo, errorMessage, "", "", "1", AllHeader, Method, Path, IP, c)
 					return
 				}
 				for rows.Next() {
 					err = rows.Scan(
-						&jRolesResponse.RoleID,
-						&jRolesResponse.RoleName,
-						&jRolesResponse.Status,
-						&jRolesResponse.TanggalInput,
+						&jSubjectsResponse.SubjectID,
+						&jSubjectsResponse.SubjectName,
+						&jSubjectsResponse.Status,
+						&jSubjectsResponse.TanggalInput,
 					)
 
-					jRolesResponses = append(jRolesResponses, jRolesResponse)
+					jSubjectsResponses = append(jSubjectsResponses, jSubjectsResponse)
 
 					if err != nil {
 						errorMessage := fmt.Sprintf("Error running %q: %+v", query1, err)
-						returnDataJsonRoles(jRolesResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
+						returnDataJsonSubjects(jSubjectsResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
 						helper.SendLogError(Username, PageGo, errorMessage, "", "", "1", AllHeader, Method, Path, IP, c)
 						return
 					}
 				}
 
-				returnDataJsonRoles(jRolesResponses, totalPage, "0", "0", "", "", logData, c)
+				returnDataJsonSubjects(jSubjectsResponses, totalPage, "0", "0", "", "", logData, c)
 				return
 
 			} else {
 				errorMessage := "Method not found"
-				returnDataJsonRoles(jRolesResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
+				returnDataJsonSubjects(jSubjectsResponses, totalPage, "1", "1", errorMessage, errorMessage, logData, c)
 				helper.SendLogError(Username, PageGo, errorMessage, "", "", "1", AllHeader, Method, Path, IP, c)
 				return
 			}
@@ -426,7 +426,7 @@ func Roles(c *gin.Context) {
 	}
 }
 
-func returnDataJsonRoles(jRolesResponse []JRolesResponse, TotalPage float64, ErrorCode string, ErrorCodeReturn string, ErrorMessage string, ErrorMessageReturn string, logData string, c *gin.Context) {
+func returnDataJsonSubjects(jSubjectsResponse []JSubjectsResponse, TotalPage float64, ErrorCode string, ErrorCodeReturn string, ErrorMessage string, ErrorMessageReturn string, logData string, c *gin.Context) {
 	if strings.Contains(ErrorMessage, "Error running") {
 		ErrorMessage = "Error Execute data"
 	}
@@ -441,7 +441,7 @@ func returnDataJsonRoles(jRolesResponse []JRolesResponse, TotalPage float64, Err
 			"ErrCode":    ErrorCode,
 			"ErrMessage": ErrorMessage,
 			"DateTime":   currentTime1,
-			"Result":     jRolesResponse,
+			"Result":     jSubjectsResponse,
 			"TotalPage":  TotalPage,
 		})
 	}
